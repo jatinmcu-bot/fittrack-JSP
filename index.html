@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitTrack ✦ สมุดสุขภาพ</title>
+<meta name="description" content="Personal health & weight loss tracker">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FBF7F2;--surface:#fff;--accent:#C97B5A;--accent-light:#F7ECE5;--accent-dark:#9E5A3A;--green:#5A9468;--green-light:#E8F5EC;--text:#2A2118;--muted:#9A8E86;--border:rgba(42,33,24,0.1);--red:#D95E5E;--red-light:#FCEAEA;--yellow:#C9993A;--yellow-light:#FBF3E0;--radius:18px;--shadow:0 2px 20px rgba(42,33,24,0.07)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 20px 60px;font-size:15px;line-height:1.65;max-width:860px;margin:0 auto}
+.serif{font-family:'DM Serif Display',serif}
+/* Header */
+.app-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;gap:12px;flex-wrap:wrap}
+.header-left h1{font-family:'DM Serif Display',serif;font-size:28px;color:var(--accent);line-height:1.2}
+.header-left .date-str{font-size:13px;color:var(--muted);margin-top:3px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.streak-badge{background:var(--accent-light);color:var(--accent-dark);font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;display:flex;align-items:center;gap:6px}
+/* Sync status */
+.sync-indicator{display:flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;white-space:nowrap}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background 0.3s}
+.sync-indicator.ok .sync-dot{background:var(--green)}
+.sync-indicator.syncing .sync-dot{background:var(--yellow);animation:pulse 1s infinite}
+.sync-indicator.error .sync-dot{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Settings Panel */
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(42,33,24,0.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+.settings-overlay.open{display:flex}
+.settings-panel{background:var(--surface);border-radius:var(--radius);padding:28px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.settings-title{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px}
+.settings-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.settings-label{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.settings-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);margin-bottom:14px}
+.settings-input:focus{outline:none;border-color:var(--accent)}
+.settings-hint{font-size:12px;color:var(--muted);line-height:1.6;background:var(--accent-light);padding:10px 14px;border-radius:8px;margin-bottom:18px}
+.settings-hint a{color:var(--accent-dark)}
+.settings-btns{display:flex;gap:10px;justify-content:flex-end}
+.btn-primary{padding:9px 20px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:14px;font-weight:500;font-family:'Sarabun',sans-serif;cursor:pointer}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-secondary{padding:9px 16px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Sarabun',sans-serif;cursor:pointer}
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+/* Goal card */
+.goal-card{background:linear-gradient(135deg,#2A2118 0%,#4A3828 100%);color:white;border-radius:var(--radius);padding:22px 24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.goal-card .card-title{color:rgba(255,255,255,.55)}
+.goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.goal-nums{display:flex;align-items:baseline;gap:8px}
+.goal-nums .num{font-family:'DM Serif Display',serif;font-size:38px;color:white}
+.goal-nums .arrow{font-size:18px;color:rgba(255,255,255,.4)}
+.goal-nums .target{font-family:'DM Serif Display',serif;font-size:38px;color:var(--accent)}
+.goal-sub{font-size:13px;color:rgba(255,255,255,.5)}
+.goal-track{height:8px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;margin:10px 0 8px}
+.goal-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#E8A882);transition:width .6s}
+.goal-milestones{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.35)}
+.goal-status{font-size:13px;color:rgba(255,255,255,.6);margin-top:4px}
+.goal-status span{color:#E8A882;font-weight:500}
+/* IF */
+.if-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.if-status-badge{font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px}
+.if-status-badge.fasting{background:var(--yellow-light);color:var(--yellow)}
+.if-status-badge.eating{background:var(--green-light);color:var(--green)}
+.if-status-badge.closed{background:#F4F0EB;color:var(--muted)}
+.if-timeline{position:relative;height:36px;border-radius:8px;background:#F4F0EB;overflow:visible;margin:4px 0 20px}
+.if-eating-zone{position:absolute;top:0;height:100%;background:linear-gradient(90deg,var(--green-light),#D5EFD9);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.if-eating-label{font-size:11px;font-weight:500;color:var(--green)}
+.if-now-marker{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--accent);border-radius:2px;transition:left 1s linear}
+.if-now-dot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;background:var(--accent);border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px rgba(201,123,90,.3)}
+.if-time-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.countdown-num{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
+.countdown-label{font-size:12px;color:var(--muted)}
+/* 2 col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:0}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}}
+/* Workout */
+.workout-type-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+.badge-strength{background:#EEF0FB;color:#5060C9}
+.badge-cardio{background:var(--green-light);color:var(--green)}
+.badge-rest{background:#F4F0EB;color:var(--muted)}
+.workout-name{font-size:15px;font-weight:500;margin-bottom:14px}
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:.5px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.task-item input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:18px;height:18px;min-width:18px;border:1.5px solid rgba(42,33,24,.25);border-radius:5px;cursor:pointer;margin-top:2px;transition:all .18s;position:relative}
+.task-item input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent)}
+.task-item input[type="checkbox"]:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;color:white;font-weight:600}
+.task-label{font-size:14px;line-height:1.4;cursor:pointer;transition:color .18s}
+.task-label.done{color:var(--muted);text-decoration:line-through}
+.workout-progress-track{height:8px;background:#F4F0EB;border-radius:4px;overflow:hidden}
+.workout-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),#E8A882);transition:width .5s}
+.workout-progress-label{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
+.workout-pct{font-weight:600;color:var(--accent)}
+.workout-complete-msg{text-align:center;padding:10px;font-size:13px;color:var(--green);font-weight:500;margin-top:8px;background:var(--green-light);border-radius:8px;display:none}
+/* Meals */
+.calorie-target-badge{display:inline-block;font-size:12px;font-weight:500;background:var(--accent-light);color:var(--accent-dark);padding:3px 10px;border-radius:20px;margin-bottom:14px}
+.meal-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border)}
+.meal-row:last-of-type{border-bottom:none}
+.meal-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.meal-info{flex:1;min-width:0}
+.meal-name{font-size:14px;font-weight:500}
+.meal-sub{font-size:11px;color:var(--muted)}
+.if-note{font-size:10px;font-weight:400;color:var(--green)}
+.kcal-input{width:72px;text-align:right;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-family:'DM Serif Display',serif;font-size:15px;background:var(--bg);color:var(--text);transition:border-color .18s}
+.kcal-input:focus{outline:none;border-color:var(--accent)}
+.kcal-unit{font-size:11px;color:var(--muted);width:28px}
+.calorie-total-row{display:flex;align-items:baseline;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1.5px solid var(--border)}
+.calorie-total-num{font-family:'DM Serif Display',serif;font-size:28px;transition:color .3s}
+.calorie-total-target{font-size:12px;color:var(--muted)}
+.calorie-bar-wrap{height:8px;background:#F4F0EB;border-radius:4px;overflow:hidden;margin-top:10px}
+.calorie-bar-fill{height:100%;border-radius:4px;max-width:100%;transition:width .4s,background .3s;background:var(--green)}
+.calorie-status-msg{font-size:12px;margin-top:6px;font-weight:500;min-height:18px;transition:color .3s}
+/* 3 col */
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:600px){.three-col{grid-template-columns:1fr}}
+/* Water */
+.water-glasses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.glass-btn{aspect-ratio:1;border-radius:10px;border:1.5px solid rgba(90,148,104,.25);background:transparent;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.glass-btn.filled{background:var(--green-light);border-color:var(--green)}
+.glass-btn:hover{transform:scale(1.08)}
+.water-count{font-size:13px;color:var(--muted);text-align:center}
+/* Weight */
+.weight-log-input-row{display:flex;gap:8px;margin-bottom:12px}
+.weight-log-input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-family:'DM Serif Display',serif;font-size:20px;background:var(--bg);color:var(--text);text-align:center}
+.weight-log-input:focus{outline:none;border-color:var(--accent)}
+.save-btn{padding:8px 14px;border-radius:10px;border:none;background:var(--accent);color:white;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .18s;white-space:nowrap}
+.save-btn:hover{background:var(--accent-dark)}
+.weight-progress-bar{display:flex;align-items:center;gap:8px;margin-top:8px}
+.wp-label{font-size:11px;color:var(--muted);white-space:nowrap}
+.wp-track{flex:1;height:6px;background:#F4F0EB;border-radius:3px;overflow:hidden}
+.wp-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .5s}
+.weight-latest{font-size:11px;color:var(--green);font-weight:500;margin-top:6px;text-align:center}
+/* Macro */
+.macro-target-display{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:8px}
+.macro-input-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.macro-input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-size:16px;background:var(--bg);color:var(--text);font-family:'DM Serif Display',serif;text-align:center}
+.macro-input:focus{outline:none;border-color:var(--accent)}
+.macro-bar-wrap{height:8px;background:#F4F0EB;border-radius:4px;overflow:hidden;margin-top:4px}
+.macro-bar-fill{height:100%;border-radius:4px;background:#5060C9;transition:width .4s}
+.macro-bar-label{font-size:11px;color:var(--muted);margin-top:5px}
+/* Weekly */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.week-day-col{text-align:center}
+.week-day-name{font-size:11px;color:var(--muted);margin-bottom:6px}
+.week-day-dot{width:36px;height:36px;border-radius:50%;margin:0 auto;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;transition:all .2s}
+.week-day-dot.today{border:2px solid var(--accent);color:var(--accent)}
+.week-day-dot.done{background:var(--green-light);border-color:var(--green);color:var(--green)}
+.week-day-dot.partial{background:var(--yellow-light);border-color:var(--yellow);color:var(--yellow)}
+.week-day-workout{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3}
+/* Notes */
+.notes-textarea{width:100%;min-height:80px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:'Sarabun',sans-serif;font-size:14px;background:var(--bg);color:var(--text);resize:none;line-height:1.6}
+.notes-textarea:focus{outline:none;border-color:var(--accent)}
+.notes-save-row{display:flex;justify-content:flex-end;margin-top:8px}
+/* Tip */
+.tip-card{background:var(--accent-light);border-radius:var(--radius);padding:16px 20px;display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
+.tip-text{font-size:13px;color:var(--accent-dark);line-height:1.6}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2A2118;color:white;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:200;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- Settings Overlay -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-panel">
+    <div class="settings-title">⚙️ ตั้งค่า</div>
+    <div class="settings-sub">เชื่อมต่อ Google Sheets เพื่อซิงค์ข้อมูลข้ามอุปกรณ์ และเก็บประวัติไว้ใน Google Drive ของคุณ</div>
+    <label class="settings-label">Google Apps Script URL</label>
+    <input class="settings-input" id="settings-url-input" placeholder="https://script.google.com/macros/s/...../exec" type="url">
+    <div class="settings-hint">
+      📋 <strong>วิธีรับ URL:</strong><br>
+      1. เปิด Google Sheet ใหม่ → เมนู <strong>Extensions → Apps Script</strong><br>
+      2. วางโค้ดจากไฟล์ <code>apps-script.gs</code> ลงไป<br>
+      3. กด <strong>Deploy → New deployment → Web app</strong><br>
+      4. ตั้ง "Who has access" เป็น <strong>Anyone</strong> → Copy URL
+    </div>
+    <div class="settings-btns">
+      <button class="btn-secondary" onclick="closeSettings()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveSettings()">บันทึก &amp; ซิงค์</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<div class="app-header">
+  <div class="header-left">
+    <h1 class="serif">FitTrack ✦</h1>
+    <div class="date-str" id="date-display"></div>
+  </div>
+  <div class="header-right">
+    <div class="sync-indicator" id="sync-indicator" onclick="openSettings()" title="คลิกเพื่อตั้งค่า Google Sheets">
+      <div class="sync-dot"></div>
+      <span id="sync-label">ตั้งค่า Sheets</span>
+    </div>
+    <div class="streak-badge">🔥 <span id="streak-num">0</span> วัน</div>
+  </div>
+</div>
+
+<!-- Goal -->
+<div class="goal-card">
+  <div class="card-title">เป้าหมาย 6 เดือน · พฤษภาคม — พฤศจิกายน 2569</div>
+  <div class="goal-header">
+    <div class="goal-nums">
+      <span class="num">57</span><span class="arrow">→</span><span class="target">47</span>
+      <span style="font-size:16px;color:rgba(255,255,255,.5);margin-left:4px">kg</span>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'DM Serif Display',serif;font-size:26px;color:white" id="goal-pct-num">0%</div>
+      <div class="goal-sub" id="goal-days-left">เริ่มในอีก — วัน</div>
+    </div>
+  </div>
+  <div class="goal-track"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
+  <div class="goal-milestones"><span>พ.ค.</span><span>มิ.ย.</span><span>ก.ค.</span><span>ส.ค.</span><span>ก.ย.</span><span>ต.ค.</span><span>พ.ย.</span></div>
+  <div class="goal-status" id="goal-status-text">น้ำหนักล่าสุด: <span>ยังไม่ได้บันทึก</span></div>
+</div>
+
+<!-- IF Window -->
+<div class="card">
+  <div class="if-header">
+    <div>
+      <div class="card-title" style="margin-bottom:4px">Intermittent Fasting · 16:8</div>
+      <div style="font-size:13px;color:var(--muted)">กินได้ 11:00 – 19:00 น.</div>
+    </div>
+    <div>
+      <div class="if-status-badge fasting" id="if-status-badge">⏳ กำลังอดอาหาร</div>
+      <div style="text-align:right;margin-top:6px">
+        <div class="countdown-num" id="if-countdown">–:––</div>
+        <div class="countdown-label" id="if-countdown-label">–</div>
+      </div>
+    </div>
+  </div>
+  <div class="if-timeline" id="if-timeline">
+    <div class="if-eating-zone" id="if-eating-zone"><span class="if-eating-label">ช่วงกินข้าว 🍽️</span></div>
+    <div class="if-now-marker" id="if-now-marker"><div class="if-now-dot"></div></div>
+  </div>
+  <div class="if-time-labels"><span>00:00</span><span>06:00</span><span>11:00</span><span>14:30</span><span>19:00</span><span>24:00</span></div>
+</div>
+
+<!-- Workout + Meals -->
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">ออกกำลังกายวันนี้</div>
+    <div id="workout-type-badge"></div>
+    <div class="workout-name" id="workout-name"></div>
+    <div id="task-list"></div>
+    <div style="margin-top:16px">
+      <div class="workout-progress-track"><div class="workout-progress-fill" id="workout-fill" style="width:0%"></div></div>
+      <div class="workout-progress-label">
+        <span style="color:var(--muted);font-size:12px">ความคืบหน้า</span>
+        <span class="workout-pct" id="workout-pct">0%</span>
+      </div>
+    </div>
+    <div class="workout-complete-msg" id="workout-complete-msg">🎉 ทำครบแล้ว! ยอดเยี่ยมมาก!</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">บันทึกแคลอรี่วันนี้</div>
+    <div class="calorie-target-badge">🎯 เป้าหมาย 1,500 kcal</div>
+    <div class="meal-row">
+      <div class="meal-icon">🌅</div>
+      <div class="meal-info"><div class="meal-name">เช้า <span class="if-note">IF: ข้ามได้</span></div><div class="meal-sub">ก่อน 11:00</div></div>
+      <input type="number" min="0" class="kcal-input" id="meal-breakfast" placeholder="0" oninput="updateCalories()">
+      <div class="kcal-unit">kcal</div>
+    </div>
+    <div class="meal-row">
+      <div class="meal-icon">☀️</div>
+      <div class="meal-info"><div class="meal-name">มื้อแรก / กลางวัน</div><div class="meal-sub">11:00–14:00 · เป้า ~550 kcal</div></div>
+      <input type="number" min="0" class="kcal-input" id="meal-lunch" placeholder="0" oninput="updateCalories()">
+      <div class="kcal-unit">kcal</div>
+    </div>
+    <div class="meal-row">
+      <div class="meal-icon">🍎</div>
+      <div class="meal-info"><div class="meal-name">ของว่าง</div><div class="meal-sub">14:00–16:00 · เป้า ~150 kcal</div></div>
+      <input type="number" min="0" class="kcal-input" id="meal-snack" placeholder="0" oninput="updateCalories()">
+      <div class="kcal-unit">kcal</div>
+    </div>
+    <div class="meal-row">
+      <div class="meal-icon">🌙</div>
+      <div class="meal-info"><div class="meal-name">มื้อเย็น</div><div class="meal-sub">17:00–19:00 · เป้า ~800 kcal</div></div>
+      <input type="number" min="0" class="kcal-input" id="meal-dinner" placeholder="0" oninput="updateCalories()">
+      <div class="kcal-unit">kcal</div>
+    </div>
+    <div class="calorie-total-row">
+      <div style="font-size:13px;font-weight:500">รวมวันนี้</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <div class="calorie-total-num" id="calorie-total">0</div>
+        <div class="calorie-total-target">/ 1,500 kcal</div>
+      </div>
+    </div>
+    <div class="calorie-bar-wrap"><div class="calorie-bar-fill" id="calorie-bar" style="width:0%"></div></div>
+    <div class="calorie-status-msg" id="calorie-status"></div>
+  </div>
+</div>
+
+<!-- Water + Weight + Protein -->
+<div class="three-col">
+  <div class="card">
+    <div class="card-title">น้ำดื่ม</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">เป้า 8 แก้ว (2 ลิตร)</div>
+    <div class="water-glasses-grid" id="water-grid"></div>
+    <div class="water-count" id="water-count">0 / 8 แก้ว</div>
+  </div>
+  <div class="card">
+    <div class="card-title">น้ำหนักวันนี้</div>
+    <div class="weight-log-input-row">
+      <input type="number" step="0.1" min="30" max="200" class="weight-log-input" id="weight-input" placeholder="57.0">
+      <button class="save-btn" onclick="saveWeight()">บันทึก</button>
+    </div>
+    <div class="weight-progress-bar">
+      <span class="wp-label">57</span>
+      <div class="wp-track"><div class="wp-fill" id="wp-fill" style="width:0%"></div></div>
+      <span class="wp-label">47 kg</span>
+    </div>
+    <div class="weight-latest" id="weight-latest"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">โปรตีนวันนี้</div>
+    <div class="macro-target-display"><span id="protein-num">0</span><span style="font-size:16px;color:var(--muted)">g</span></div>
+    <div class="macro-input-row">
+      <input type="number" min="0" class="macro-input" id="protein-input" placeholder="0" oninput="updateProtein()">
+      <span class="macro-unit">g</span>
+    </div>
+    <div class="macro-bar-wrap"><div class="macro-bar-fill" id="protein-bar" style="width:0%"></div></div>
+    <div class="macro-bar-label" id="protein-label">เป้า 110g · <span id="protein-remain">เหลือ 110g</span></div>
+  </div>
+</div>
+
+<!-- Weekly -->
+<div class="card">
+  <div class="card-title">สัปดาห์นี้</div>
+  <div class="week-grid" id="week-grid"></div>
+</div>
+
+<!-- Notes -->
+<div class="card">
+  <div class="card-title">บันทึกประจำวัน</div>
+  <textarea class="notes-textarea" id="notes-input" placeholder="บันทึกความรู้สึก อาหารที่กิน หรือสิ่งที่อยากจำไว้วันนี้..."></textarea>
+  <div class="notes-save-row"><button class="save-btn" onclick="saveNotes()">บันทึก</button></div>
+</div>
+
+<!-- Tip -->
+<div class="tip-card"><div style="font-size:18px;flex-shrink:0">✨</div><div class="tip-text" id="tip-text"></div></div>
+
+<script>
+// ── Config ──
+const CALORIE_TARGET = 1500;
+const PROTEIN_TARGET = 110;
+const START_WEIGHT = 57;
+const GOAL_WEIGHT = 47;
+const PROGRAM_START = new Date('2026-05-01');
+const PROGRAM_END = new Date('2026-11-01');
+
+const TIPS = [
+  'กินโปรตีนให้ครบ 110g/วัน — ช่วยสร้างกล้ามเนื้อและลดหิวได้ดีมาก',
+  'ดื่มน้ำก่อนอาหาร 30 นาที ช่วยให้อิ่มเร็ว กินน้อยลงโดยธรรมชาติ',
+  'น้ำหนักขึ้นลงได้วันละ 1-2 kg เป็นเรื่องปกติ อย่าท้อใจ ดูค่าเฉลี่ย 4 สัปดาห์แทน',
+  'นอนหลับพอ 7-8 ชั่วโมง ช่วยเผาผลาญไขมันได้ดีกว่าออกกำลังกาย 1 ชั่วโมงด้วยซ้ำ',
+  'IF ไม่ใช่การอด แต่คือการจัดเวลากิน ร่างกายจะค่อยๆ ปรับตัวใน 2 สัปดาห์แรก',
+  'Weight Training ช่วยเร่ง metabolism ได้นาน 24-48 ชั่วโมงหลังออกกำลังกาย',
+  'กินช้าๆ ตั้ง 20 นาที สมองถึงจะรู้ว่าอิ่มแล้ว ลดการกินเกินได้มากเลย',
+  'Progress ไม่ใช่แค่ตาชั่ง วัดรอบเอวและรูปถ่ายทุกเดือนจะเห็นผลชัดกว่า',
+  'อาหารไทยหลายอย่างดีมากๆ ต้มยำ ต้มข่า ลาบ ไม่ราดน้ำมัน โปรตีนสูง',
+  'มื้อแรกในช่วง IF ควรมีโปรตีนสูง เช่น ไข่ + อกไก่ เพื่อป้องกันกล้ามเนื้อสลาย',
+  'การออกกำลังกายก่อนอาหาร (Fasted cardio) เผาไขมันได้ดีใน IF',
+  'เตรียมอาหารล่วงหน้า (Meal prep) วันอาทิตย์ ช่วยไม่ให้กินเกินในสัปดาห์',
+];
+
+const WORKOUTS = {
+  0:{type:'rest',label:'พักผ่อน',badge:'badge-rest',burn:60,name:'วันพักผ่อน 🛌',tasks:['พักผ่อนให้เต็มที่','ยืดเส้นก่อนนอน 10 นาที']},
+  1:{type:'strength',label:'Full Body',badge:'badge-strength',burn:200,name:'เวทเทรนนิ่ง — Full Body 💪',tasks:['วอร์มอัพ 5-10 นาที','Squat 3 × 10 รอบ','Romanian Deadlift 3 × 10 รอบ','Dumbbell Chest Press 3 × 10 รอบ','Bent-over Row 3 × 10 รอบ','Plank 3 × 30 วินาที','ยืดเส้น Cool down']},
+  2:{type:'cardio',label:'Cardio วิ่ง',badge:'badge-cardio',burn:280,name:'คาร์ดิโอ — วิ่ง Zone 2 🏃‍♀️',tasks:['วอร์มอัพเดิน 5 นาที','วิ่ง Zone 2 ต่อเนื่อง 30-40 นาที','Cool down เดิน 5 นาที']},
+  3:{type:'strength',label:'Lower Body',badge:'badge-strength',burn:220,name:'เวทเทรนนิ่ง — ขาและก้น 🦵',tasks:['วอร์มอัพ 5-10 นาที','Squat 4 × 12 รอบ','Walking Lunges 3 × 12 ข้างละ','Goblet Squat 3 × 12 รอบ','Hip Thrust 4 × 15 รอบ','Calf Raises 3 × 20 รอบ','ยืดเส้น Cool down']},
+  4:{type:'rest',label:'Active Rest',badge:'badge-rest',burn:80,name:'วันพักฟื้น 🧘‍♀️',tasks:['ยืดเส้น Full Body 15 นาที','เดินเบาๆ อย่างน้อย 20 นาที']},
+  5:{type:'strength',label:'Upper Body',badge:'badge-strength',burn:200,name:'เวทเทรนนิ่ง — แขนและหลัง 💪',tasks:['วอร์มอัพ 5-10 นาที','Push Up / Chest Press 3 × 10 รอบ','Dumbbell Row 3 × 10 รอบ','Shoulder Press 3 × 10 รอบ','Bicep Curl 3 × 12 รอบ','Tricep Extension 3 × 12 รอบ','ยืดเส้น Cool down']},
+  6:{type:'cardio',label:'Cardio ปั่น',badge:'badge-cardio',burn:350,name:'คาร์ดิโอ — ปั่น/ว่ายน้ำ 🚴‍♀️',tasks:['วอร์มอัพ 5 นาที','ปั่นจักรยาน หรือว่ายน้ำ 45 นาที','ยืดเส้น Cool down']},
+};
+const WEEK_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MONTH_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// ── LocalStorage helpers ──
+function todayKey(){const d=new Date();return`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
+function getLog(k){try{return JSON.parse(localStorage.getItem('ft_'+k)||'null')||{}}catch(e){return{}}}
+function saveLog(k,data){localStorage.setItem('ft_'+k,JSON.stringify(data))}
+function getAllWeights(){try{return JSON.parse(localStorage.getItem('ft_weights')||'[]')}catch(e){return[]}}
+function getSheetUrl(){return localStorage.getItem('ft_sheet_url')||''}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── Sync Indicator ──
+function setSyncStatus(status,label){
+  const el=document.getElementById('sync-indicator');
+  const lb=document.getElementById('sync-label');
+  el.className='sync-indicator '+status;
+  lb.textContent=label;
+}
+
+// ── Google Sheets sync ──
+async function syncToSheets(dk){
+  const url=getSheetUrl();
+  if(!url)return;
+  const log=getLog(dk); log.date=dk;
+  try{
+    setSyncStatus('syncing','กำลังซิงค์...');
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveLog',log}),redirect:'follow'});
+    const j=await r.json();
+    if(j.success){setSyncStatus('ok','ซิงค์แล้ว ✓')}
+    else{setSyncStatus('error','ซิงค์ผิดพลาด')}
+  }catch(e){setSyncStatus('error','ซิงค์ผิดพลาด')}
+}
+
+async function pullFromSheets(){
+  const url=getSheetUrl();
+  if(!url)return;
+  try{
+    setSyncStatus('syncing','กำลังดึงข้อมูล...');
+    const r=await fetch(url+'?action=getAll');
+    const data=await r.json();
+    if(Array.isArray(data)){
+      data.forEach(log=>{if(log.date)saveLog(log.date,log)});
+      // Sync weights
+      const wt=data.filter(l=>l.weight).map(l=>({date:l.date,weight:parseFloat(l.weight)}));
+      if(wt.length>0) localStorage.setItem('ft_weights',JSON.stringify(wt));
+      reinitAll();
+      showToast('✓ ดึงข้อมูลจาก Google Sheets เรียบร้อย');
+    }
+    setSyncStatus('ok','ซิงค์แล้ว ✓');
+  }catch(e){setSyncStatus('error','เชื่อมต่อไม่ได้')}
+}
+
+// ── Settings ──
+function openSettings(){
+  document.getElementById('settings-url-input').value=getSheetUrl();
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings(){document.getElementById('settings-overlay').classList.remove('open')}
+function saveSettings(){
+  const url=document.getElementById('settings-url-input').value.trim();
+  localStorage.setItem('ft_sheet_url',url);
+  closeSettings();
+  if(url){showToast('✓ บันทึก URL แล้ว กำลังซิงค์...');pullFromSheets();}
+  else{setSyncStatus('','ตั้งค่า Sheets');showToast('ลบ URL แล้ว')}
+}
+document.getElementById('settings-overlay').addEventListener('click',e=>{if(e.target.id==='settings-overlay')closeSettings()});
+
+// ── Header ──
+function initHeader(){
+  const d=new Date();
+  const days=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  document.getElementById('date-display').textContent=`วัน${days[d.getDay()]} ที่ ${d.getDate()} ${MONTH_TH[d.getMonth()]} ${d.getFullYear()+543}`;
+  let streak=0;
+  const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=0;i<365;i++){
+    const c=new Date(today); c.setDate(today.getDate()-i);
+    const k=`${c.getFullYear()}-${c.getMonth()+1}-${c.getDate()}`;
+    const l=getLog(k);
+    const active=(l.workoutPct>=50)||(Object.values(l.meals||{}).some(v=>v>0));
+    if(active)streak++;else if(i>0)break;
+  }
+  document.getElementById('streak-num').textContent=streak;
+  // Sync status
+  const url=getSheetUrl();
+  if(!url)setSyncStatus('','ตั้งค่า Sheets');
+}
+
+// ── Goal Progress ──
+function initGoalProgress(){
+  const weights=getAllWeights();
+  const latestW=weights.length>0?weights[weights.length-1].weight:null;
+  const lostSoFar=latestW?Math.max(0,START_WEIGHT-latestW):0;
+  const pct=Math.min(100,(lostSoFar/10)*100);
+  document.getElementById('goal-fill').style.width=pct+'%';
+  document.getElementById('goal-pct-num').textContent=Math.round(pct)+'%';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const startDate=new Date(PROGRAM_START); startDate.setHours(0,0,0,0);
+  const daysUntil=Math.ceil((startDate-today)/86400000);
+  if(today<startDate){document.getElementById('goal-days-left').textContent=`เริ่มในอีก ${daysUntil} วัน`;}
+  else{const el=Math.floor((today-startDate)/86400000);const tot=Math.floor((PROGRAM_END-startDate)/86400000);document.getElementById('goal-days-left').textContent=`เหลืออีก ${Math.max(0,tot-el)} วัน`;}
+  const s=document.getElementById('goal-status-text');
+  if(latestW){s.innerHTML=`น้ำหนักล่าสุด: <span>${latestW.toFixed(1)} kg</span> · ลดไปแล้ว <span>${lostSoFar.toFixed(1)} kg</span> · เหลือ <span>${Math.max(0,latestW-GOAL_WEIGHT).toFixed(1)} kg</span>`;}
+  else{s.innerHTML=`น้ำหนักล่าสุด: <span>ยังไม่ได้บันทึก</span> · เป้าลด 0.5 kg/สัปดาห์`;}
+}
+
+// ── IF Window ──
+function updateIFDisplay(){
+  const now=new Date();const h=now.getHours();const m=now.getMinutes();
+  const nowMin=h*60+m;const startMin=11*60;const endMin=19*60;const tot=24*60;
+  document.getElementById('if-eating-zone').style.left=(startMin/tot*100)+'%';
+  document.getElementById('if-eating-zone').style.width=((endMin-startMin)/tot*100)+'%';
+  document.getElementById('if-now-marker').style.left=(nowMin/tot*100)+'%';
+  const badge=document.getElementById('if-status-badge');
+  const cdN=document.getElementById('if-countdown');const cdL=document.getElementById('if-countdown-label');
+  let minLeft,sc,bc;
+  if(nowMin<startMin){minLeft=startMin-nowMin;sc='⏳ กำลังอดอาหาร';bc='fasting';cdL.textContent='จนกว่าจะกินได้';}
+  else if(nowMin<endMin){minLeft=endMin-nowMin;sc='🍽️ ช่วงกินข้าว';bc='eating';cdL.textContent='ปิดหน้าต่างกินข้าว';}
+  else{minLeft=(tot-nowMin)+startMin;sc='✓ หยุดกินแล้ว';bc='closed';cdL.textContent='จนกว่าจะกินได้พรุ่งนี้';}
+  const hh=Math.floor(minLeft/60);const mm=minLeft%60;
+  cdN.textContent=`${hh}:${String(mm).padStart(2,'0')}`;
+  badge.textContent=sc; badge.className='if-status-badge '+bc;
+}
+
+// ── Workout ──
+function initWorkout(){
+  const dow=new Date().getDay();const w=WORKOUTS[dow];
+  const dk=todayKey();const log=getLog(dk);
+  document.getElementById('workout-type-badge').innerHTML=`<div class="workout-type-badge ${w.badge}">${w.label} · เผาผลาญ ~${w.burn} kcal</div>`;
+  document.getElementById('workout-name').textContent=w.name;
+  const tl=document.getElementById('task-list'); tl.innerHTML='';
+  const states=log.tasks||w.tasks.map(()=>false);
+  w.tasks.forEach((task,i)=>{
+    const div=document.createElement('div'); div.className='task-item';
+    div.innerHTML=`<input type="checkbox" id="t${i}" ${states[i]?'checked':''}><label class="task-label ${states[i]?'done':''}" for="t${i}">${task}</label>`;
+    tl.appendChild(div);
+    div.querySelector('input').addEventListener('change',saveWorkoutProgress);
+  });
+  updateWorkoutProgress();
+}
+function saveWorkoutProgress(){
+  const dow=new Date().getDay();const w=WORKOUTS[dow];
+  const states=w.tasks.map((_,i)=>document.getElementById('t'+i)?.checked||false);
+  const dk=todayKey();const log=getLog(dk);log.tasks=states;
+  log.workoutPct=Math.round(states.filter(Boolean).length/states.length*100);
+  saveLog(dk,log); updateWorkoutProgress(); initHeader();
+  syncToSheets(dk);
+}
+function updateWorkoutProgress(){
+  const dow=new Date().getDay();const w=WORKOUTS[dow];let done=0;
+  w.tasks.forEach((_,i)=>{const cb=document.getElementById('t'+i);const lb=document.querySelector(`label[for="t${i}"]`);if(cb&&lb){lb.className='task-label'+(cb.checked?' done':'');if(cb.checked)done++;}});
+  const pct=Math.round(done/w.tasks.length*100);
+  document.getElementById('workout-fill').style.width=pct+'%';
+  document.getElementById('workout-pct').textContent=pct+'%';
+  document.getElementById('workout-complete-msg').style.display=pct===100?'block':'none';
+}
+
+// ── Calories ──
+function updateCalories(){
+  const ids=['meal-breakfast','meal-lunch','meal-snack','meal-dinner'];
+  let total=0; ids.forEach(id=>{total+=parseInt(document.getElementById(id).value)||0;});
+  document.getElementById('calorie-total').textContent=total.toLocaleString();
+  const pct=Math.min(110,(total/CALORIE_TARGET)*100);
+  const bar=document.getElementById('calorie-bar');bar.style.width=pct+'%';
+  const totalEl=document.getElementById('calorie-total');const statusEl=document.getElementById('calorie-status');
+  if(total===0){bar.style.background='#E8E4DF';statusEl.textContent='';totalEl.style.color='var(--text)';}
+  else if(total<1200){bar.style.background='var(--yellow)';statusEl.style.color='var(--yellow)';statusEl.textContent='⚠️ กินน้อยเกินไป — ควรกินอย่างน้อย 1,200 kcal';totalEl.style.color='var(--yellow)';}
+  else if(total<=CALORIE_TARGET){bar.style.background='var(--green)';statusEl.style.color='var(--green)';statusEl.textContent=total===CALORIE_TARGET?'✓ ครบเป้าหมายแล้ว!':`✓ เหลือได้อีก ${CALORIE_TARGET-total} kcal`;totalEl.style.color='var(--green)';}
+  else{bar.style.background='var(--red)';statusEl.style.color='var(--red)';statusEl.textContent=`⚠️ เกินเป้า ${total-CALORIE_TARGET} kcal`;totalEl.style.color='var(--red)';}
+  const dk=todayKey();const log=getLog(dk);
+  log.meals={breakfast:parseInt(document.getElementById('meal-breakfast').value)||0,lunch:parseInt(document.getElementById('meal-lunch').value)||0,snack:parseInt(document.getElementById('meal-snack').value)||0,dinner:parseInt(document.getElementById('meal-dinner').value)||0};
+  saveLog(dk,log); initHeader();
+  clearTimeout(window._mealSyncTimer);
+  window._mealSyncTimer=setTimeout(()=>syncToSheets(dk),1500);
+}
+function loadMeals(){
+  const log=getLog(todayKey());
+  if(log.meals){['breakfast','lunch','snack','dinner'].forEach(m=>{const el=document.getElementById('meal-'+m);if(el)el.value=log.meals[m]||'';});updateCalories();}
+}
+
+// ── Water ──
+function initWater(){
+  const grid=document.getElementById('water-grid'); grid.innerHTML='';
+  const log=getLog(todayKey());const count=log.water||0;
+  for(let i=0;i<8;i++){
+    const btn=document.createElement('button');
+    btn.className='glass-btn'+(i<count?' filled':'');btn.innerHTML='💧';
+    btn.onclick=()=>setWater(i<count?i:i+1);
+    grid.appendChild(btn);
+  }
+  document.getElementById('water-count').textContent=`${count} / 8 แก้ว`;
+}
+function setWater(count){
+  const dk=todayKey();const log=getLog(dk);log.water=count;saveLog(dk,log);
+  initWater(); syncToSheets(dk);
+}
+
+// ── Weight ──
+function saveWeight(){
+  const v=parseFloat(document.getElementById('weight-input').value);
+  if(!v||v<30||v>200){showToast('⚠️ กรุณากรอกน้ำหนักที่ถูกต้อง');return;}
+  const weights=getAllWeights();const dk=todayKey();
+  const idx=weights.findIndex(w=>w.date===dk);
+  if(idx>=0)weights[idx].weight=v;else weights.push({date:dk,weight:v});
+  localStorage.setItem('ft_weights',JSON.stringify(weights));
+  const log=getLog(dk);log.weight=v;saveLog(dk,log);
+  updateWeightDisplay(); showToast('✓ บันทึกน้ำหนักแล้ว');
+  syncToSheets(dk);
+}
+function updateWeightDisplay(){
+  const weights=getAllWeights();const latest=weights.length>0?weights[weights.length-1].weight:null;
+  if(latest){
+    const pct=Math.min(100,Math.max(0,(START_WEIGHT-latest)/(START_WEIGHT-GOAL_WEIGHT)*100));
+    document.getElementById('wp-fill').style.width=pct+'%';
+    document.getElementById('weight-latest').textContent=`✓ บันทึกล่าสุด: ${latest.toFixed(1)} kg`;
+    document.getElementById('weight-input').value=latest.toFixed(1);
+  }
+  initGoalProgress();
+}
+
+// ── Protein ──
+function updateProtein(){
+  const val=parseInt(document.getElementById('protein-input').value)||0;
+  const pct=Math.min(100,(val/PROTEIN_TARGET)*100);
+  document.getElementById('protein-num').textContent=val;
+  document.getElementById('protein-bar').style.width=pct+'%';
+  const remain=Math.max(0,PROTEIN_TARGET-val);
+  const remEl=document.getElementById('protein-remain');
+  if(val>=PROTEIN_TARGET){remEl.textContent='✓ ครบเป้า!';remEl.style.color='var(--green)';document.getElementById('protein-bar').style.background='var(--green)';}
+  else{remEl.textContent=`เหลือ ${remain}g`;remEl.style.color='var(--muted)';document.getElementById('protein-bar').style.background='#5060C9';}
+  const dk=todayKey();const log=getLog(dk);log.protein=val;saveLog(dk,log);
+  clearTimeout(window._proteinSyncTimer);
+  window._proteinSyncTimer=setTimeout(()=>syncToSheets(dk),1500);
+}
+function loadProtein(){const log=getLog(todayKey());if(log.protein){document.getElementById('protein-input').value=log.protein;updateProtein();}}
+
+// ── Weekly ──
+function initWeeklyGrid(){
+  const grid=document.getElementById('week-grid'); grid.innerHTML='';
+  const today=new Date(); today.setHours(0,0,0,0);const dow=today.getDay();
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(today.getDate()-dow+i);
+    const key=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    const log=getLog(key);const isToday=i===dow;const w=WORKOUTS[i];
+    const hasMeals=log.meals&&Object.values(log.meals).some(v=>v>0);
+    const hasWorkout=(log.workoutPct||0)>=50;
+    let dc='week-day-dot';
+    if(isToday)dc+=' today';
+    else if(d<today){if(hasMeals&&hasWorkout)dc+=' done';else if(hasMeals||hasWorkout)dc+=' partial';}
+    const col=document.createElement('div'); col.className='week-day-col';
+    col.innerHTML=`<div class="week-day-name">${WEEK_TH[i]}</div><div class="${dc}">${isToday?'●':d>today?'':hasMeals&&hasWorkout?'✓':hasMeals||hasWorkout?'~':''}</div><div class="week-day-workout">${w.label}</div>`;
+    grid.appendChild(col);
+  }
+}
+
+// ── Notes ──
+function saveNotes(){
+  const notes=document.getElementById('notes-input').value;
+  const dk=todayKey();const log=getLog(dk);log.notes=notes;saveLog(dk,log);
+  showToast('✓ บันทึกโน้ตแล้ว'); syncToSheets(dk);
+}
+function loadNotes(){const log=getLog(todayKey());if(log.notes)document.getElementById('notes-input').value=log.notes;}
+
+// ── Tip ──
+function initTip(){document.getElementById('tip-text').textContent=TIPS[new Date().getDate()%TIPS.length];}
+
+// ── Reinit all (after sheets pull) ──
+function reinitAll(){initHeader();initGoalProgress();initWorkout();loadMeals();initWater();updateWeightDisplay();loadProtein();initWeeklyGrid();loadNotes();}
+
+// ── Init ──
+function init(){
+  initHeader(); initGoalProgress(); updateIFDisplay(); initWorkout();
+  loadMeals(); initWater(); updateWeightDisplay(); loadProtein();
+  initWeeklyGrid(); loadNotes(); initTip();
+  setInterval(updateIFDisplay,30000);
+  // Background sync from sheets on load
+  if(getSheetUrl()) setTimeout(pullFromSheets, 800);
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
